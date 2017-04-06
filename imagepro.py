@@ -303,9 +303,9 @@ class Imagepro:
     
     
     
-    def maxgauss(self,nxcorr,solid=False,returnall=False,crop=10,size=2):
+    def maxgauss(self,nxcorr,solid=False,returnall=False,crop=10,size=2,show=False):
         """
-        Function to determine the maximum position of a fitted Gaussian.
+        Function to determine the maximum position of a fitted 2D Gaussian.
         Determines the maximum pixel value and crops a small image around this values
         Then fits a 2D gaussian and returns the postiton of the peak in pixels from the
         uncropped image.
@@ -316,8 +316,9 @@ class Imagepro:
         if solid:   returns maxpos if fit fails, else returns error (may be necessary to 
                     use error to try different fit
         if returnall: returns all parameter of fitted gauss, else only max position
+        if show: prints out the image including the 2D Gaussian (for debugging & testing)
         """
-        
+        import matplotlib.pyplot as plt
         maxpos = np.unravel_index(nxcorr.argmax(), nxcorr.shape)
         
         # Cut image to get a better result
@@ -341,8 +342,8 @@ class Imagepro:
             print('Error: Peak to close to boundary, return maxpos values')
             return maxpos[0],maxpos[1]
             
-        # Renew fit boundaries (necessary here, as size of croppe image may change)
-        initial_guess = (size,smalldimx/2,smalldimy/2,1,1,0,0)
+        # Renew fit boundaries (necessary here, as size of cropped image may change)
+        initial_guess = (0.7,smalldimx/2,smalldimy/2,size,size,0,0)
         x = np.linspace(0, smalldimx-1, smalldimx)
         y = np.linspace(0, smalldimy-1, smalldimy)
         x, y = np.meshgrid(x, y)
@@ -355,17 +356,99 @@ class Imagepro:
             return maxpos[0],maxpos[1]
         else: 
             popt, pcov = opt.curve_fit(self._2Dgauss, (x, y), smallnxcorr, p0=initial_guess)
+	
+        popt[2] += (maxpos[0]-crop)
+        popt[1] += (maxpos[1]-crop)
+        
+        if show:
+            Z = np.arange(0,1,0.1)
+            dimx = nxcorr.shape[0]
+            dimy = nxcorr.shape[1]
+            x = np.linspace(0, dimx-1, dimx)
+            y = np.linspace(0, dimy-1, dimy)
+            x, y = np.meshgrid(x, y)
+            data_fitted = self._2Dgauss((x, y), *popt)
+            fig, ax = plt.subplots(1, 1)    
+            ax.hold(True)
+            ax.imshow(nxcorr)
+            ax.contour(x, y, data_fitted.reshape(dimx, dimy), colors='k',levels=Z)
+            ax.axvline(popt[1],ls='--',color='k')
+            ax.axhline(popt[2],ls='--',color='k')
+            plt.show()
+
         if returnall:
-            popt[2] += (maxpos[0]-crop)
-            popt[1] += (maxpos[1]-crop)
             return popt
         else:
-            maxx = popt[2]+(maxpos[0]-crop)
-            maxy = popt[1]+(maxpos[1]-crop)
-            return maxx,maxy
+            return popt[2]-len(nxcorr)//2, popt[1]-len(nxcorr)//2
 
     
+
+
+
+
+    def maxgauss_zoom(self, nxcorr, crop=3, size=0.5, zoom=1, order=1, show=False, returnall=False):
+        """
+        Same principle as maxgaussOnly difference: zooms in on cutted image to get more datapoints
+        zoom gives the zooming factor and
+        order the interpolation method
+        
+        Need to put the solid version in at some point, if I gonna use this regularly
+        """
+        import matplotlib.pyplot as plt
+        maxpos = np.unravel_index(nxcorr.argmax(), nxcorr.shape)
+            
+        # Cut image to get a better result
+        smallnxcorr = nxcorr[maxpos[0]-crop:maxpos[0]+crop,maxpos[1]-crop:maxpos[1]+crop]
+        smalldimx = smallnxcorr.shape[0]
+        smalldimy = smallnxcorr.shape[1]
+
+        # Rescale if croped image moves out of bounds
+        if smalldimx != smalldimy:
+            while smalldimx != smalldimy:
+                crop -= 1
+                smallnxcorr = nxcorr[maxpos[0]-crop:maxpos[0]+crop,maxpos[1]-crop:maxpos[1]+crop]
+                smalldimx = smallnxcorr.shape[0]
+                smalldimy = smallnxcorr.shape[1]
+
+        # zoom in
+        smallnxcorr = scipy.ndimage.zoom(smallnxcorr, zoom, order=order)
+        smalldimx *= zoom
+        smalldimy *= zoom
     
+        x = np.linspace(0, smalldimx-1, smalldimx)
+        y = np.linspace(0, smalldimy-1, smalldimy)
+        x, y = np.meshgrid(x, y)
+        smallnxcorr = smallnxcorr.reshape(smalldimx*smalldimy)
+
+        initial_guess = (0.5,smalldimx/2,smalldimy/2,size*zoom,size*zoom,0,0)
+
+        popt, pcov = opt.curve_fit(self._2Dgauss, (x, y), smallnxcorr, p0=initial_guess)
+
+        popt[1] = popt[1]/zoom+(maxpos[1]-crop)
+        popt[2] = popt[2]/zoom+(maxpos[0]-crop)
+    
+        if show:
+            Z = np.arange(0,1,0.1)
+            dimx = nxcorr.shape[0]
+            dimy = nxcorr.shape[1]
+            x = np.linspace(0, dimx-1, dimx)
+            y = np.linspace(0, dimy-1, dimy)
+            x, y = np.meshgrid(x, y)
+            data_fitted = self._2Dgauss((x, y), *popt)
+            fig, ax = plt.subplots(1, 1)
+            ax.hold(True)
+            ax.imshow(nxcorr)
+            ax.contour(x, y, data_fitted.reshape(dimx, dimy), colors='k',levels=Z)
+            ax.axvline(popt[1],ls='--',color='k')
+            ax.axhline(popt[2],ls='--',color='k')
+            plt.show()
+            
+        if returnall:
+            return popt
+        else:
+            return popt[2]-len(nxcorr)//2, popt[1]-len(nxcorr)//2
+
+   
     
     
     def deconvolve(self,image, kernel):
