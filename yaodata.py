@@ -11,7 +11,7 @@ import matplotlib
 
 from .pistonrec import *
 from .zernike import *
-# from smallfunc import *
+from smallfunc import *
 
 
 
