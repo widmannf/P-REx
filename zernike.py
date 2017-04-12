@@ -323,6 +323,33 @@ class Zernike:
             return B, lensletmask
         else:
             return B
+        
+    def _zernreconstruction_givenmask(self,numSlopes,numZernike,lensletmask):
+        """
+        Build a matrix to reconstruct Zernike modes from a list of slopes
+        Matrix will have a size of #slopes x #zernikemodes
+        
+        Input has to include a mask of the slope distribution
+        """
+        jvec = range(numZernike)
+        nmvec = np.array([self._noll2zern(x+1) for x in jvec])
+        lensletedges = np.linspace(-1.0,1.0,len(lensletmask)+1)
+        lensletcenters = (lensletedges[1:]+lensletedges[:-1])/2.0
+        lensletXX,lensletYY = np.meshgrid(lensletcenters,lensletcenters)
+    
+        # Get Matrix
+        A = np.zeros([numSlopes*2,numZernike])
+        for j in jvec:
+            m, n = self._noll2zern(j+1)
+            dzdx = self.getSurface(n,m,lensletXX,lensletYY,1)
+            dzdy = self.getSurface(n,m,lensletXX,lensletYY,2)
+            dzdx = dzdx[np.where(lensletmask)]
+            dzdy = dzdy[np.where(lensletmask)]
+            A[:numSlopes,j] = dzdx
+            A[numSlopes:,j] = dzdy
+    
+        B = np.linalg.pinv(A)
+        return B
 
 
     def slopes2WF(self,B,xslopes,yslopes,mask,pixel=200):

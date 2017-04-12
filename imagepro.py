@@ -353,7 +353,7 @@ class Imagepro:
                 popt, pcov = opt.curve_fit(self._2Dgauss, (x, y), smallnxcorr, p0=initial_guess)
             except (RuntimeError, TypeError):
                 print('Error: Fit failed, return maxpos values')
-            return maxpos[0],maxpos[1]
+                return maxpos[0]-len(nxcorr)//2,maxpos[1]-len(nxcorr)//2
         else: 
             popt, pcov = opt.curve_fit(self._2Dgauss, (x, y), smallnxcorr, p0=initial_guess)
 	
