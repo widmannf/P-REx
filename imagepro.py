@@ -379,7 +379,7 @@ class Imagepro:
         if returnall:
             return popt
         else:
-            return popt[2]-len(nxcorr)//2, popt[1]-len(nxcorr)//2
+            return popt[2], popt[1]
 
     
 
@@ -446,7 +446,7 @@ class Imagepro:
         if returnall:
             return popt
         else:
-            return popt[2]-len(nxcorr)//2, popt[1]-len(nxcorr)//2
+            return popt[2], popt[1]
 
    
     
