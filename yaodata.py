@@ -87,6 +87,16 @@ class Yaodata(Prex,Zernike):
         for i in range(dimt-1):
             data_pol[i] = data_sl[i+1]-np.dot(data_dm[i],IM)
             
+        # check if several WFSs
+        numWFS = (dimx//2)//validsubaps
+        if numWFS > 1:
+            print('Multiple WFSs, take the mean over the %i WFS' % numWFS)
+            data_pol_long = np.copy(data_pol)
+            data_pol = np.zeros((dimt-1,dimx//numWFS))
+            for i in range(numWFS):
+                data_pol += data_pol_long[:,i*2*validsubaps:i*2*validsubaps+2*validsubaps]
+            data_pol /= numWFS
+            
         # Use the POL data to create 2D POL Data for x & y slopes
         data_pol_2D_x = np.zeros((dimt-1,shshape.shape[0],shshape.shape[1]))
         data_pol_2D_y = np.zeros((dimt-1,shshape.shape[0],shshape.shape[1]))
