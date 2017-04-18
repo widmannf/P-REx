@@ -1,3 +1,18 @@
+###########
+## This file is part of the Python Module P-Rex, a module for test for a 
+## piston reconstruction experiement for optical interferometer (see Pott et al 2016)
+## This files contains several functions for the use of zernike polynomials
+##
+## Copyright (c) 2017, Felix Widmann
+##
+## This program is free software; you can redistribute it and/or  modify it
+## under the terms of the GNU General Public License  as  published  by the
+## Free Software Foundation; either version 2 of the License,  or  (at your
+## option) any later version.
+###########
+
+
+
 import numpy as np
 from scipy.misc import factorial as fac
 import math

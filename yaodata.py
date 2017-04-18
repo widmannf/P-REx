@@ -1,3 +1,19 @@
+###########
+## This file is part of the Python Module P-Rex, a module for test for a 
+## piston reconstruction experiement for optical interferometer (see Pott et al 2016)
+## This files contains several functions to apply the algorithms on data from a 
+## Yao Simulation (by F. Rigaout, frigaut.github.io/yao/index.html)
+##
+## Copyright (c) 2017, Felix Widmann
+##
+## This program is free software; you can redistribute it and/or  modify it
+## under the terms of the GNU General Public License  as  published  by the
+## Free Software Foundation; either version 2 of the License,  or  (at your
+## option) any later version.
+###########
+
+
+
 import numpy as np
 from scipy import fftpack
 import scipy.ndimage.filters
@@ -479,7 +495,7 @@ class Yaodata(Prex,Zernike):
 
 
 
-    def yao2prexTTpiston(self,average=10,frequency=500,only_rms=False,fast=True,
+    def yao2prexTTpiston(self,average=10,frequency=500,only_rms=False,fast=True, plot_piston=False,
                          *args, **kwargs):
         """
         Uses the yao_to_prex_TT_fast function (for necessary data see function) 
@@ -516,11 +532,24 @@ class Yaodata(Prex,Zernike):
 
         piston_rms = rms(piston_res)
         
+        step = average/frequency
+        x = np.arange(0,len(prexdata[2])*step,step)
+           
+        if plot_piston:
+            plt.plot(x,piston_rec,color=color1,label='Reconstructed piston')
+            plt.plot(x,piston_red,color='k',label='Theoretical piston')
+            plt.plot(x,piston_res,color=color2,label='Residual Value')
+            plt.fill_between(x,piston_res, 0, alpha=0.2,color=color2)
+            plt.axhline(0,lw=0.4)
+            hide_spines()
+            plt.legend(loc=2)
+            plt.xlabel('Time [s]')
+            plt.ylabel('Piston [$\mu$m]')
+            plt.show()
+        
         if only_rms:
             return piston_rms
         else:
-            step = average/frequency
-            x = np.arange(0,len(prexdata[2])*step,step)
             return x, piston_red, piston_rec, piston_res, piston_rms
         
         
@@ -975,7 +1004,7 @@ class Yaodata(Prex,Zernike):
 
 
     
-    def yao2prexpiston(self,average=10,frequency=500,only_rms=False, *args, **kwargs):
+    def yao2prexpiston(self,average=10,frequency=500,only_rms=False,plot_piston=False, *args, **kwargs):
         """
         Uses the yao_to_prex_fast function (for necessary data see function) but gives the reconstructed piston
         as an output and not the differential piston
@@ -1005,12 +1034,26 @@ class Yaodata(Prex,Zernike):
 
         piston_rms = rms(piston_res)
         
+        step = average/frequency
+        x = np.arange(0,len(data_prex[2])*step,step)
+        if plot_piston:
+            plt.plot(x,piston_rec,color=color1,label='Reconstructed piston')
+            plt.plot(x,piston_red,color='k',label='Theoretical piston')
+            plt.plot(x,piston_res,color=color2,label='Residual Value')
+            plt.fill_between(x,piston_res, 0, alpha=0.2,color=color2)
+            plt.axhline(0,lw=0.4)
+            hide_spines()
+            plt.legend(loc=2)
+            plt.xlabel('Time [s]')
+            plt.ylabel('Piston [$\mu$m]')
+            plt.show()
+            
         if only_rms:
             return piston_rms
         else:
-            step = average/frequency
-            x = np.arange(0,len(data_prex[2])*step,step)
             return x, piston_red, piston_rec, piston_res, piston_rms
+    
+                
 
     
     
