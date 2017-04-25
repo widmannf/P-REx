@@ -135,7 +135,7 @@ class Prex(Imagepro):
                 x,y = [j-len(nxcorr)//2 for j in maxpos]
                 if (abs(x)>self.maxshift) or (abs(y)>self.maxshift):
                     print('Value for shift seems unreasonable')
-
+            
             maxx.append(x)
             maxy.append(y)
             
