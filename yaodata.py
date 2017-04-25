@@ -46,7 +46,7 @@ class Yaodata(Prex,Zernike):
         self.maxshift = maxshift    
     
     
-    def _yao2data(self,onedimslopes=False):
+    def _yao2data(self,TT_subsystem=False,onedimslopes=False,full_TT=False):
         """
         Loads Yao SH Data to do the prex algorithm or similar 
         The data has to be in the path folder, including:
@@ -59,19 +59,47 @@ class Yaodata(Prex,Zernike):
         returns: 2D SH sloeps (TT reduced) and tip & Tilt
         """
         # Read in SH shape
-        name_shshape = self.path + self.prefix + '_SH_pupil.fits'
-        shshape = fits.open(name_shshape)[0].data
+        try:
+            name_shshape = self.path + self.prefix + '_SH_pupil_2.fits'
+            shshape = fits.open(name_shshape)[0].data
+            print('Using SH shape of 2nd SH-WFS')
+        except:
+            name_shshape = self.path + self.prefix + '_SH_pupil_1.fits'
+            print('Only one SH-WFS, use shape of this')
+            shshape = fits.open(name_shshape)[0].data            
         shshapelist = shshape.reshape(len(shshape)*len(shshape))
         validsubaps = np.sum(shshape)
-    
-        # Read in CM and IM
-        name_mat = self.path + self.prefix + '-mat.fits'
-        mat = fits.open(name_mat)
-        IM = mat[0].data[0]
-        CM = mat[0].data[1]
         
+        # How many DMs?
+        dms = self.path + self.prefix + '_dm*_alt_0001.fits'
+        number_dms = len(glob.glob(dms))
+        print('%i DMs detected' % number_dms)
+        
+        if (number_dms > 2):
+            raise Exception('Too many DMs or 2 DMs w/o a TT subsystem')
+        if (number_dms == 2 and TT_subsystem == False):
+            print('Two DMs detected, but no TT subsystem declared.')
+            print('Will set TT_subsystem = True & Full_TT = True')
+            TT_subsystem = True
+            full_TT = True
+            
         # Read in DM values
-        name_dm_val = self.path + self.prefix + '_dm1_alt_*.fits'
+        if number_dms == 1:
+            name_dm_val = self.path + self.prefix + '_dm1_alt_*.fits'
+        if number_dms == 2:
+            name_dm_val = self.path + self.prefix + '_dm2_alt_*.fits'
+            name_dm_val_TT = self.path + self.prefix + '_dm1_alt_*.fits'
+            filenames = sorted(glob.glob(name_dm_val_TT))
+            dimt = len(filenames)
+            hdudata = fits.open(filenames[0])
+            dimx = hdudata[0].data.shape[0]
+            supaps_TT_DM = dimx
+            data_dm_TT = np.zeros((dimt,dimx))
+            for index, filename in enumerate(filenames):
+                hdudata = fits.open(filename)
+                data_dm_TT[index] = hdudata[0].data.copy()
+                del hdudata[0].data
+                hdudata.close()
         filenames = sorted(glob.glob(name_dm_val))
         dimt = len(filenames)
         hdudata = fits.open(filenames[0])
@@ -84,6 +112,18 @@ class Yaodata(Prex,Zernike):
             del hdudata[0].data
             hdudata.close()
         
+        # Read in CM and IM
+        name_mat = self.path + self.prefix + '-mat.fits'
+        mat = fits.open(name_mat)
+        IM = mat[0].data[0]
+        CM = mat[0].data[1]
+        if TT_subsystem:
+            name_shshape = self.path + self.prefix + '_SH_pupil_1.fits'
+            shshape_TT = fits.open(name_shshape)[0].data            
+            validsubaps_TT = np.sum(shshape_TT)
+            IM_TT = IM[:supaps_TT_DM,:validsubaps_TT*2]
+            IM = IM[supaps_TT_DM:,validsubaps_TT*2:]
+            
         # Read in slope values
         name_slope_val = self.path + self.prefix + '_slopes_*.fits'
         filenames = sorted(glob.glob(name_slope_val))
@@ -97,8 +137,12 @@ class Yaodata(Prex,Zernike):
             data_sl[index] = hdudata[0].data.copy()
             del hdudata[0].data
             hdudata.close()
-    
+        if TT_subsystem:
+            data_sl_TT = data_sl[:,:validsubaps_TT*2]
+            data_sl = data_sl[:,validsubaps_TT*2:]
+
         # Create POL data
+        dimx = data_sl.shape[1]
         data_pol = np.zeros((dimt-1,dimx))
         for i in range(dimt-1):
             data_pol[i] = data_sl[i+1]-np.dot(data_dm[i],IM)
@@ -111,7 +155,7 @@ class Yaodata(Prex,Zernike):
             data_pol = np.zeros((dimt-1,dimx//numWFS))
             for i in range(numWFS):
                 data_pol += data_pol_long[:,i*2*validsubaps:i*2*validsubaps+2*validsubaps]
-            data_pol /= numWFS
+            data_pol /= numWFS       
             
         # Use the POL data to create 2D POL Data for x & y slopes
         data_pol_2D_x = np.zeros((dimt-1,shshape.shape[0],shshape.shape[1]))
@@ -140,6 +184,26 @@ class Yaodata(Prex,Zernike):
         
         data_pol_1D_x = data_pol[:,:validsubaps]
         data_pol_1D_y = data_pol[:,validsubaps:]
+        
+        if TT_subsystem:
+            tip_TT = []
+            tilt_TT = []
+            for i in range(1,dimt):
+                tip_TT.append(np.mean(data_sl_TT[i,:validsubaps_TT]))
+                tilt_TT.append(np.mean(data_sl_TT[i,validsubaps_TT:]))
+##            data_pol_TT = np.zeros((dimt-1,dimx))
+##            for i in range(dimt-1):
+##                data_pol_TT[i] = data_sl_TT[i+1]#-0.01*np.dot(data_dm_TT[i],IM_TT)
+##            tip_TT = data_pol_TT[:,0]
+##            tilt_TT = data_pol_TT[:,1]]
+            if full_TT:
+                print('Using tip, tilt from TT & GLAO system')
+                tip = [i+j for i,j in zip(tip_TT,tip)]
+                tilt = [i+j for i,j in zip(tilt_TT,tilt)]
+            #plt.plot(tip2)
+            #plt.plot(tilt2)
+            #plt.show()
+        
         datacube = [data_pol_2D_x,data_pol_2D_y,tip,tilt]
         
         if onedimslopes:
@@ -152,7 +216,7 @@ class Yaodata(Prex,Zernike):
     
     
     def yao2prexTT(self,path_OL,average=10,npixel=200,return_lists=False,return_strehl=True,
-                   use_piston=False,return_piston=False,calc_factor=False,
+                   use_piston=False,return_piston=False,calc_factor=False,plot=False,
                    tomum=0.19392, *args, **kwargs):
         """
         Uses Yao SH Data to do the prex tip tilt algorithm
@@ -175,6 +239,8 @@ class Yaodata(Prex,Zernike):
                         As the piston calculation is the slowest part of the function, this option should be
                         used if there is a loop with the same atmosphere
         return_piston:  If true returns the theoretical piston values
+        TT_subsystem:   for an GLAO I need an additional TT WFS in order to determine the theoretical values
+                        then this has to be used with True
         
             
         Output:
@@ -185,13 +251,24 @@ class Yaodata(Prex,Zernike):
         difpiston_rec:  list of reconstructed differential piston (if retun_lists)
         """
 
-        datacube = self._yao2data()
+        datacube = self._yao2data(*args, **kwargs)
         data_pol_2D_x = datacube[0]
         data_pol_2D_y = datacube[1]
         tip = datacube[2]
         tilt = datacube[3]
-        difpiston = self.prexTT(datacube,average)
         
+        if plot:
+            difpiston, maxx, maxy = self.prexTT(datacube,average,return_pos=True)
+            # plot position
+            z = np.arange(len(maxx))
+            plt.figure(figsize=(4,4))
+            plt.scatter(maxx,maxy,s=50,c=z,marker='o',zorder=3)
+            plt.xlabel('X-Shift [pixel]')
+            plt.ylabel('Y-Shift [pixel]')
+            hide_spines(outwards=False)
+            plt.show() 
+        else:
+            difpiston = self.prexTT(datacube,average)
         
         ## Calculate different factors
         #Number of lenslets in diameter for calculation facotr
@@ -259,17 +336,29 @@ class Yaodata(Prex,Zernike):
                 image = np.copy(atmosphere[maxy[i]-pixel//2:maxy[i]+pixel//2,maxx[i]-pixel//2:maxx[i]+pixel//2])
                 image = self.mask(image,mask_val=np.nan)
                 piston.append(np.nanmean(image))
-
         
         # weighting factor rad -> mum, incl correct D/r0 & airmass
         piston_weight = np.genfromtxt(self.path + self.prefix + '_weight')
-        
+        if len(piston_weight) > 1:
+            piston_weight = piston_weight[0]
         difpiston_rec = []
         for j in range(0,len(tip)-average,average):
             dif = (np.mean(piston[j+average:j+2*average])-np.mean(piston[j:j+average]))
             difpiston_rec.append(dif*piston_weight)
-            
         
+        
+        if plot:
+            plt.figure(figsize=(6,3))
+            plt.plot(difpiston,color=color1,ls='',marker='o',label='measured dif. piston')
+            plt.plot(difpiston_rec,color='k',label='recovered dif.piston')
+            plt.axhline(0,lw=0.4)
+            hide_spines()
+            plt.legend(loc=2)
+            plt.xlabel('Measurements')
+            plt.ylabel('dPiston [$\mu$m]')
+            plt.show()
+        print(difpiston)
+        print(difpiston_rec)
         error = rmse(difpiston,difpiston_rec)
         
         if return_strehl:
@@ -300,7 +389,8 @@ class Yaodata(Prex,Zernike):
 
 
     def yao2prexTTfast(self,average=10,tomum=0.19392,npixel=200,return_piston=False,plot=False,
-                    return_lists=False,return_strehl=True,TTfactor=False, *args, **kwargs):
+                    return_lists=False,return_strehl=True,TTfactor=False,
+                    *args, **kwargs):
         """
         Uses Yao SH Data to do the prex tip tilt algorithm
         The data has to be in the path folder, including:
@@ -327,6 +417,8 @@ class Yaodata(Prex,Zernike):
                         As the piston calculation is the slowest part of the function, this option should be
                         used if there is a loop with the same atmosphere
         return_piston:  If true returns the theoretical piston values
+        TT_subsystem:   for an GLAO I need an additional TT WFS in order to determine the theoretical values
+                        then this has to be used with True
                 
                 
         nearly the same as 'yao_to_prex_TT' but it gets the theoretical piston from the input phase (used by YAO)
@@ -339,7 +431,7 @@ class Yaodata(Prex,Zernike):
         difpiston:  list of calculated differential piston (if return_lists)
         difpiston_rec:  list of reconstructed differential piston (if retun_lists)
         """
-        datacube = self._yao2data()
+        datacube = self._yao2data(*args, **kwargs)
         data_pol_2D_x = datacube[0]
         data_pol_2D_y = datacube[1]
         tip = datacube[2]
@@ -372,10 +464,14 @@ class Yaodata(Prex,Zernike):
             z = np.arange(len(maxx))
             plt.figure(figsize=(4,4))
             plt.scatter(maxx,maxy,s=50,c=z,marker='o',zorder=3)
+            plt.axhline(0.5,lw=0.5,ls='--')
+            plt.axvline(0,lw=0.5,ls='--')
             plt.xlabel('X-Shift [pixel]')
             plt.ylabel('Y-Shift [pixel]')
             hide_spines(outwards=False)
-            plt.show() 
+            plt.show()
+            print('X-Shift: %.3f +- %.3f' % (np.mean(maxx), np.std(maxx)))
+            print('Y-Shift: %.3f +- %.3f' % (np.mean(maxy), np.std(maxy)))
         else:
             difpiston = self.prexTT(datacube,average)
 
