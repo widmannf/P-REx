@@ -367,7 +367,7 @@ class Zernike:
         return B
 
 
-    def slopes2WF(self,B,xslopes,yslopes,mask,pixel=200):
+    def slopes2WF(self,B,xslopes,yslopes,mask,pixel=200,*args,**kwargs):
         """
         Reconstruct a wavefroint directly from the measured slopes
         using zernike polynomials
@@ -385,6 +385,6 @@ class Zernike:
             slopes = np.hstack((xslopes,yslopes))
     
         rVec = np.dot(B,slopes)
-        rwavefront = self.modes2WF(rVec,pixel=pixel)
+        rwavefront = self.modes2WF(rVec,pixel=pixel,*args,**kwargs)
         rwavefront -= np.nanmean(rwavefront)
         return rwavefront

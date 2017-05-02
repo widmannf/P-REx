@@ -189,8 +189,9 @@ class Yaodata(Prex,Zernike):
             tip_TT = []
             tilt_TT = []
             for i in range(1,dimt):
-                tip_TT.append(np.mean(data_sl_TT[i,:validsubaps_TT]))
-                tilt_TT.append(np.mean(data_sl_TT[i,validsubaps_TT:]))
+                pol_TT = data_sl_TT-np.dot(data_dm_TT[i-1],IM_TT)
+                tip_TT.append(np.mean(pol_TT[i,:validsubaps_TT]))
+                tilt_TT.append(np.mean(pol_TT[i,validsubaps_TT:]))
 ##            data_pol_TT = np.zeros((dimt-1,dimx))
 ##            for i in range(dimt-1):
 ##                data_pol_TT[i] = data_sl_TT[i+1]#-0.01*np.dot(data_dm_TT[i],IM_TT)
