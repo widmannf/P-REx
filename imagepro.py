@@ -19,6 +19,7 @@ import numpy as np
 from scipy import fftpack
 import scipy.ndimage.filters
 import scipy.optimize as opt
+import math
 
 
 ##################################################
@@ -262,6 +263,7 @@ class Imagepro:
     
         Need to work on the normalization
         """
+        size = kernel.shape
         if crop:
             if kernel.shape[0] != image.shape[0]:
                 raise Exception('For cropping, images have to be the same size')
@@ -280,7 +282,7 @@ class Imagepro:
             ones = np.ones_like(image)
             onescorr = self.xcorrelation(ones,ones)
             nxcorr = xcorr/(np.std(image)*np.std(kernel)*onescorr)
-            nxcorr = self._procrustes(nxcorr,kernel.shape,side='both')    
+            nxcorr = self._procrustes(nxcorr,size,side='both')    
     
         else:
             if laplace:
@@ -299,7 +301,7 @@ class Imagepro:
                 ones0 = self.mask(ones0)
             onescorr = self.xcorrelation(ones0,ones1)
             nxcorr = xcorr/(np.std(image2)*np.std(kernel2)*onescorr)
-            nxcorr = self._procrustes(nxcorr,kernel.shape,side='both')
+            nxcorr = self._procrustes(nxcorr,size,side='both')
         return nxcorr
     
     

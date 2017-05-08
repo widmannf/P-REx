@@ -46,7 +46,7 @@ class Yaodata(Prex,Zernike):
         self.maxshift = maxshift    
     
     
-    def _yao2data(self,TT_subsystem=False,onedimslopes=False,full_TT=False):
+    def _yao2data(self,TT_subsystem=False,onedimslopes=False,full_TT=False,pyramid=False):
         """
         Loads Yao SH Data to do the prex algorithm or similar 
         The data has to be in the path folder, including:
@@ -58,15 +58,20 @@ class Yaodata(Prex,Zernike):
         
         returns: 2D SH sloeps (TT reduced) and tip & Tilt
         """
-        # Read in SH shape
-        try:
-            name_shshape = self.path + self.prefix + '_SH_pupil_2.fits'
+        # Read in WFS shape
+        if pyramid:
+            name_shshape = self.path + self.prefix + '_pyr_pupil_1.fits'
             shshape = fits.open(name_shshape)[0].data
-            print('Using SH shape of 2nd SH-WFS')
-        except:
-            name_shshape = self.path + self.prefix + '_SH_pupil_1.fits'
-            print('Only one SH-WFS, use shape of this')
-            shshape = fits.open(name_shshape)[0].data            
+            print('Using Pyramid shape of 1st WFS')
+        else:
+            try:
+                name_shshape = self.path + self.prefix + '_SH_pupil_2.fits'
+                shshape = fits.open(name_shshape)[0].data
+                print('Using SH shape of 2nd SH-WFS')
+            except:
+                name_shshape = self.path + self.prefix + '_SH_pupil_1.fits'
+                print('Only one SH-WFS, use shape of this')
+                shshape = fits.open(name_shshape)[0].data            
         shshapelist = shshape.reshape(len(shshape)*len(shshape))
         validsubaps = np.sum(shshape)
         
@@ -473,6 +478,8 @@ class Yaodata(Prex,Zernike):
             plt.show()
             print('X-Shift: %.3f +- %.3f' % (np.mean(maxx), np.std(maxx)))
             print('Y-Shift: %.3f +- %.3f' % (np.mean(maxy), np.std(maxy)))
+        elif return_lists:
+            difpiston, maxx, maxy = self.prexTT(datacube,average,return_pos=True)
         else:
             difpiston = self.prexTT(datacube,average)
 
@@ -579,13 +586,13 @@ class Yaodata(Prex,Zernike):
         
         if return_piston:
             if return_lists:
-                return error, strehl, difpiston, difpiston_rec, piston
+                return error, strehl, difpiston, difpiston_rec, piston, maxx, maxy
             else:
                 return error, strehl, piston
 
         else:
             if return_lists:
-                return error, strehl, difpiston, difpiston_rec
+                return error, strehl, difpiston, difpiston_rec, maxx, maxy
             else:
                 return error, strehl
 

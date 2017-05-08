@@ -30,6 +30,8 @@
 ## 	simulation (YAO, from Francois Rigaut: http://frigaut.github.io/yao/index.html).
 ## 	To be used, one has to modify the Yao files a little to get the right data. Examples
 ## 	for that will be added.
+## Part 5: flao.py
+##  apply prex to flao data (more to come)
 ## 
 ## !!! This Module is under constant developement at the moment !!!
 ###########
@@ -38,4 +40,5 @@ from .zernike import *
 from .imagepro import *
 from .pistonrec import *
 from .yaodata import *
+from .flao import *
 	
