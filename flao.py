@@ -24,7 +24,7 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib
 
-
+from smallfunc import *
 
 
 ##################################################
@@ -38,7 +38,7 @@ def showFLAO(path='../FLAO_Data/'):
     filenames = sorted(glob.glob(path + '*.fits'))
     names = []
     for i in filenames:
-        names.append(i[13:-5])
+        names.append(i[len(path):-5])
     return names
 
 class FLAO(Prex):
@@ -65,7 +65,9 @@ class FLAO(Prex):
         self.dm_modes_ol = self.data[11].data
         self.CM2         = self.data[12].data[:400,:1376] 
         self.res_modes   = self.data[13].data
-        
+        self.wind        = self.data[14].data[0]
+        self.windangle   = self.data[14].data[1]
+                
         self.lensletmask = np.zeros(80*80)
         self.lensletmask[self.indpup[2,:]]=1
         self.lensletmask = np.reshape(self.lensletmask,(80,80))
@@ -193,3 +195,64 @@ class FLAO(Prex):
             return pol_x_2d, pol_y_2d
         else:
             return pol_x, pol_y
+        
+        
+    def winddetection(self,shift=200,average=2000,start=100,return_nxcorr=False,plot=False,
+                      return_angle=False):
+        polslopes_x, polslopes_y = self._oldata()
+        polslopes_x -= np.mean(polslopes_x,0)
+        polslopes_y -= np.mean(polslopes_y,0)
+        correlation_x = np.zeros_like(polslopes_y[0])
+        correlation_y = np.zeros_like(polslopes_x[0])
+        for i in range(average):
+            kernel = i+start
+            image = i+shift+start        
+            correlation_x += self.nxcorrelation(polslopes_x[kernel],polslopes_x[image],
+                                            laplace=False,pupil=self.lensletmask)
+            correlation_y += self.nxcorrelation(polslopes_y[kernel],polslopes_y[image],
+                                            laplace=False,pupil=self.lensletmask)
+        correlation = correlation_x + correlation_y
+        correlation /= (average*2)
+        maxpos = self.maxgauss(correlation,crop=5,solid=True)
+        maxpos = [i-15 for i in maxpos]
+        vspeed = math.sqrt(maxpos[0]**2+maxpos[1]**2)*8/30*989/shift
+        zero = [0,1]
+        angle = self.angle_clockwise(maxpos,zero)
+        
+        if plot:
+            plt.imshow(correlation)
+            plt.axhline(15,ls='--',lw='0.7',color='white')
+            plt.axvline(15,ls='--',lw='0.7',color='white')
+            plt.axhline(maxpos[0]+15,ls='-',lw='0.7',color='white')
+            plt.axvline(maxpos[1]+15,ls='-',lw='0.7',color='white')
+            hide_spines(outwards=False)
+            plt.show()
+            
+        if return_nxcorr:
+            if return_angle:
+                return vspeed, angle, correlation
+            else:
+                return maxpos[0],maxpos[1], correlation
+        else:
+            if return_angle:
+                return vspeed, angle
+            else:
+                return maxpos[0],maxpos[1]
+
+    def length(self,v):
+        return math.sqrt(v[0]**2+v[1]**2)
+    def dot_product(self,v,w):
+        return v[0]*w[0]+v[1]*w[1]
+    def determinant(self,v,w):
+        return v[0]*w[1]-v[1]*w[0]
+    def inner_angle(self,v,w):
+        cosx=self.dot_product(v,w)/(self.length(v)*self.length(w))
+        rad=math.acos(cosx) # in radians
+        return rad*180/math.pi # returns degrees
+    def angle_clockwise(self,A, B):
+        inner=self.inner_angle(A,B)
+        det = self.determinant(A,B)
+        if det<0: #this is a property of the det. If the det < 0 then B is clockwise of A
+            return inner
+        else: # if the det > 0 then A is immediately clockwise of B
+            return 360-inner
