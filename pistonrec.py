@@ -70,7 +70,7 @@ class Prex(Imagepro):
     
     
     
-    def prexTT(self,datacube,average,return_pos=False,only_pos=False):
+    def prexTT(self,datacube,average,windaverage=1,return_pos=False,only_pos=False):
         """
         Function to calculate the differential piston from slope data using the
         Tip-Tilt concept (documentation/paper in preparation)
@@ -78,6 +78,8 @@ class Prex(Imagepro):
         input data:
         datacube: list with 2D xslopes data, 2D yslopes, tip and tilt
         average: number of images for the average, measurement will be for 2*average
+        windaverage: can be set to use a larger average for the wind value. dimension is
+                     the average. if windaverage = 10 -> 10 * average
         return_pos: if true returns also list of the posisiton of the maximum
         only_pos: if True returns only the list of the posisiton of the maximum (wind vector)
         !!! Calibration factor might be necessary !!!
@@ -93,7 +95,9 @@ class Prex(Imagepro):
         tilt = datacube[3]
         
         difpiston = []
-
+        
+        tiplist = []
+        tiltlist = []
         maxx = []
         maxy =[]
         for i in range(0,len(tip)-average,average):
@@ -138,11 +142,29 @@ class Prex(Imagepro):
             
             maxx.append(x)
             maxy.append(y)
-            
             av_tip = np.mean(tip[i:i+2*average])
             av_tilt = np.mean(tilt[i:i+2*average])
             
-            difpiston.append(av_tip*y+av_tilt*x)        
+            if windaverage != 1:
+                tiplist.append(av_tip)
+                tiltlist.append(av_tilt)
+            else:
+                difpiston.append(av_tip*y+av_tilt*x)
+            
+        if windaverage != 1:
+            overlap = (len(maxx)%windaverage)
+            maxx = np.array(maxx[:-overlap])
+            maxx = np.median(maxx.reshape(-1,windaverage),1)
+            maxx = maxx.repeat(windaverage)
+            
+            maxy = np.array(maxy[:-overlap])
+            maxy = np.median(maxy.reshape(-1,windaverage),1)
+            maxy = maxy.repeat(windaverage)
+            
+            tiplist = np.array(tiplist[:-overlap])
+            tiltlist = np.array(tiltlist[:-overlap])
+            
+            difpiston = tiplist*maxy+tiltlist*maxx 
             
             
         if only_pos:

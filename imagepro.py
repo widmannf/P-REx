@@ -210,7 +210,7 @@ class Imagepro:
         return xcorr
     
     
-    def nxcorrelation(self,kernel,image,laplace=True,crop=False,cropval=2):
+    def nxcorrelation(self,kernel,image,pupil=None,laplace=True,crop=False,cropval=2):
         """
         Normalized Cross Correlation of two images,
         Based on FFTs with padding to a size of 2N-1
@@ -228,7 +228,11 @@ class Imagepro:
         Laplace = if true applies a laplace fitler to the data
         Crop = if true croppes the outer pixel (how many given by crop value) to
         avoid boundary effects, when using laplace. (only necessary if resolution is bad, 
-        bigger than Laplace filter)   
+        bigger than Laplace filter)
+        Pupil = has to be an array of the same size as the image, which shows the pupil (1 if 
+        in pupil, 0 if not). Will be used for the normalization. If not given the normalization
+        is done with an constant array of ones (works more or less but result is better with 
+        given pupil)
         """
         if laplace:
             if crop:
@@ -241,10 +245,16 @@ class Imagepro:
             image2 = image.astype(float)
             kernel2 = kernel.astype(float)
         xcorr = self.xcorrelation(kernel2,image2)
-       
-        ones1 = np.ones_like(image2)
-        ones0 = np.ones_like(kernel2)
-        onescorr = self.xcorrelation(ones0,ones1)
+        
+        if pupil is None:
+            ones1 = np.ones_like(image2)
+            ones0 = np.ones_like(kernel2)
+            onescorr = self.xcorrelation(ones0,ones1)
+        else:
+            if pupil.shape == image.shape:
+                onescorr = self.xcorrelation(pupil,pupil)
+            else:
+                raise Exception('Wrong dimension of pupil')            
     
         nxcorr = xcorr/(np.std(image2)*np.std(kernel2)*onescorr)
         nxcorr = self._procrustes(nxcorr,kernel.shape,side='both')
@@ -322,7 +332,7 @@ class Imagepro:
     
     
     
-    def maxgauss(self,nxcorr,solid=False,returnall=False,crop=10,size=2,show=False):
+    def maxgauss(self,nxcorr,solid=False,returnall=False,returnerror=False,crop=10,size=2,show=False):
         """
         Function to determine the maximum position of a fitted 2D Gaussian.
         Determines the maximum pixel value and crops a small image around this values
@@ -396,7 +406,10 @@ class Imagepro:
             plt.show()
 
         if returnall:
-            return popt
+            if returnerror:
+                return popt, np.sqrt(np.diag(pcov))
+            else:
+                return popt
         else:
             return popt[2], popt[1]
 

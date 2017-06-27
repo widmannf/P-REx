@@ -9,6 +9,12 @@
 ## under the terms of the GNU General Public License  as  published  by the
 ## Free Software Foundation; either version 2 of the License,  or  (at your
 ## option) any later version.
+##
+##
+## Some of this functions are on basis of the libtim package from Tim van Werkhoven
+## see: https://github.com/tvwerkhoven/libtim-py
+## as well as code from Ravi S. Jonnal, see:
+## https://github.com/rjonnal/zernike/blob/master/zernike/__init__.py
 ###########
 
 

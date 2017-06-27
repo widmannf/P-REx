@@ -28,6 +28,7 @@ import matplotlib
 from .pistonrec import *
 from .zernike import *
 from smallfunc import *
+from matplotlib import gridspec
 
 
 
@@ -46,7 +47,7 @@ class Yaodata(Prex,Zernike):
         self.maxshift = maxshift    
     
     
-    def _yao2data(self,TT_subsystem=False,onedimslopes=False,full_TT=False,pyramid=False):
+    def _yao2data(self,TT_subsystem=False,onedimslopes=False,full_TT=False,pyramid=False,leave_TT=False):
         """
         Loads Yao SH Data to do the prex algorithm or similar 
         The data has to be in the path folder, including:
@@ -182,9 +183,10 @@ class Yaodata(Prex,Zernike):
             tip.append(mean_x)
             mean_y = np.sum(data_pol_1D_y)/validsubaps
             tilt.append(mean_y)
-            data_pol_2D_x[i] -= mean_x
+            if leave_TT == False:
+                data_pol_2D_x[i] -= mean_x
+                data_pol_2D_y[i] -= mean_y
             data_pol_2D_x[i] *= shshape
-            data_pol_2D_y[i] -= mean_y
             data_pol_2D_y[i] *= shshape    
         
         data_pol_1D_x = data_pol[:,:validsubaps]
@@ -223,7 +225,7 @@ class Yaodata(Prex,Zernike):
     
     def yao2prexTT(self,path_OL,average=10,npixel=200,return_lists=False,return_strehl=True,
                    use_piston=False,return_piston=False,calc_factor=False,plot=False,
-                   tomum=0.19392, *args, **kwargs):
+                   tomum=0.19392,windaverage=1, *args, **kwargs):
         """
         Uses Yao SH Data to do the prex tip tilt algorithm
         The data has to be in the path folder, including:
@@ -264,7 +266,7 @@ class Yaodata(Prex,Zernike):
         tilt = datacube[3]
         
         if plot:
-            difpiston, maxx, maxy = self.prexTT(datacube,average,return_pos=True)
+            difpiston, maxx, maxy = self.prexTT(datacube,average,return_pos=True,windaverage=windaverage)
             # plot position
             z = np.arange(len(maxx))
             plt.figure(figsize=(4,4))
@@ -274,7 +276,7 @@ class Yaodata(Prex,Zernike):
             hide_spines(outwards=False)
             plt.show() 
         else:
-            difpiston = self.prexTT(datacube,average)
+            difpiston = self.prexTT(datacube,average,windaverage=windaverage)
         
         ## Calculate different factors
         #Number of lenslets in diameter for calculation facotr
@@ -395,7 +397,7 @@ class Yaodata(Prex,Zernike):
 
 
     def yao2prexTTfast(self,average=10,tomum=0.19392,npixel=200,return_piston=False,plot=False,
-                    return_lists=False,return_strehl=True,TTfactor=False,
+                    return_lists=False,return_strehl=True,TTfactor=False,windaverage=1,
                     *args, **kwargs):
         """
         Uses Yao SH Data to do the prex tip tilt algorithm
@@ -465,23 +467,22 @@ class Yaodata(Prex,Zernike):
         datacube = [data_pol_2D_x,data_pol_2D_y,tip,tilt]
         
         if plot:
-            difpiston, maxx, maxy = self.prexTT(datacube,average,return_pos=True)
+            difpiston, maxx, maxy = self.prexTT(datacube,average,return_pos=True,windaverage=windaverage)
             # plot position
             z = np.arange(len(maxx))
-            plt.figure(figsize=(4,4))
+            plt.figure(figsize=(10,3))
+            gs = gridspec.GridSpec(1, 5,width_ratios=(1,0.1,1,0.1,1))
+            axes = plt.subplot(gs[0,0])
             plt.scatter(maxx,maxy,s=50,c=z,marker='o',zorder=3)
-            plt.axhline(0.5,lw=0.5,ls='--')
-            plt.axvline(0,lw=0.5,ls='--')
-            plt.xlabel('X-Shift [pixel]')
-            plt.ylabel('Y-Shift [pixel]')
+            #plt.xlabel('X-Shift [pixel]')
+            #plt.ylabel('Y-Shift [pixel]')
             hide_spines(outwards=False)
-            plt.show()
             print('X-Shift: %.3f +- %.3f' % (np.mean(maxx), np.std(maxx)))
             print('Y-Shift: %.3f +- %.3f' % (np.mean(maxy), np.std(maxy)))
         elif return_lists:
-            difpiston, maxx, maxy = self.prexTT(datacube,average,return_pos=True)
+            difpiston, maxx, maxy = self.prexTT(datacube,average,return_pos=True,windaverage=windaverage)
         else:
-            difpiston = self.prexTT(datacube,average)
+            difpiston = self.prexTT(datacube,average,windaverage=windaverage)
 
         
         # Theoretical Values
@@ -509,7 +510,9 @@ class Yaodata(Prex,Zernike):
         for j in range(0,len(tip)-average,average):
             dif = (np.mean(piston[j+average:j+2*average])-np.mean(piston[j:j+average]))
             difpiston_rec.append(dif)
-        
+        if windaverage != 1:
+            overlap = (len(difpiston_rec)%windaverage)
+            difpiston_rec = difpiston_rec[:-overlap]
         
         # if wanted get calibration factor for TT values
         if TTfactor:
@@ -549,38 +552,36 @@ class Yaodata(Prex,Zernike):
         
         
         if plot:
-            plt.figure(figsize=(6,3))
+            axes = plt.subplot(gs[0,2])
             plt.plot(av_tip_list,color=color1,marker='',ls='-',label='Measured Tip')
             plt.plot(tip_theo2,color=color1,marker='.',ls='',label='Theoretical Tip')
             plt.plot(av_tilt_list,color=color3,marker='',ls='-',label='Measured Tilt')
             plt.plot(tilt_theo2,color=color3,marker='.',ls='',label='Theoretical Tilt')
             hide_spines()
-            plt.legend(loc=2)
-            plt.xlabel('Measurements')
-            plt.ylabel('TipTilt')
-            plt.show()
+            #plt.legend(loc=2)
+            #plt.xlabel('Measurements')
+            #plt.ylabel('TipTilt')
             
             
-            
-            
-            plt.figure(figsize=(6,3))
+            axes = plt.subplot(gs[0,4])
             plt.plot(difpiston,color=color1,ls='',marker='o',label='measured dif. piston')
             plt.plot(difpiston_rec,color='k',label='recovered dif.piston')
             plt.axhline(0,lw=0.4)
             hide_spines()
-            plt.legend(loc=2)
-            plt.xlabel('Measurements')
-            plt.ylabel('dPiston [$\mu$m]')
+            #plt.legend(loc=2)
+            #plt.xlabel('Measurements')
+            #plt.ylabel('dPiston [$\mu$m]')
             plt.show()
     
         
-        
+
         
         error = rmse(difpiston,difpiston_rec)
         
         if return_strehl:
             name_strehl = self.path + self.prefix + '_strehl'
             strehl = float(np.genfromtxt(name_strehl))
+            print('Strehl: %.3f' % strehl)
         else:
             strehl = 0.0
         
@@ -600,7 +601,7 @@ class Yaodata(Prex,Zernike):
 
 
     def yao2prexTTpiston(self,average=10,frequency=500,only_rms=False,fast=True, plot_piston=False,
-                         *args, **kwargs):
+                         windaverage=1,*args, **kwargs):
         """
         Uses the yao_to_prex_TT_fast function (for necessary data see function) 
         but gives the reconstructed piston
@@ -614,7 +615,7 @@ class Yaodata(Prex,Zernike):
         piston_rms  rms of residual piston
         """
         if fast:
-            prexdata = self.yao2prexTTfast(average=average,return_piston=True,
+            prexdata = self.yao2prexTTfast(average=average,windaverage=windaverage,return_piston=True,
                                            return_lists=True, *args, **kwargs)
         else:
             prexdata = self.yao2prexTT(self.path,average=average,return_piston=True,
@@ -636,20 +637,35 @@ class Yaodata(Prex,Zernike):
 
         piston_rms = rms(piston_res)
         
+        piston_red = piston_red[:len(piston_rec)]
+        
         step = average/frequency
-        x = np.arange(0,len(prexdata[2])*step,step)
+        x = np.arange(len(piston_rec))*step
            
         if plot_piston:
-            plt.plot(x,piston_rec,color=color1,label='Reconstructed piston')
-            plt.plot(x,piston_red,color='k',label='Theoretical piston')
-            plt.plot(x,piston_res,color=color2,label='Residual Value')
-            plt.fill_between(x,piston_res, 0, alpha=0.2,color=color2)
-            plt.axhline(0,lw=0.4)
-            hide_spines()
-            plt.legend(loc=2)
-            plt.xlabel('Time [s]')
-            plt.ylabel('Piston [$\mu$m]')
-            plt.show()
+            try:
+                plt.plot(x,piston_rec,color=color1,label='Reconstructed piston')
+                plt.plot(x,piston_red,color='k',label='Theoretical piston')
+                plt.plot(x,piston_res,color=color3,label='Residual Value')
+                plt.fill_between(x,piston_res, 0, alpha=0.2,color=color3)
+                plt.axhline(0,lw=0.4)
+                hide_spines()
+                plt.legend(loc=2)
+                plt.xlabel('Time [s]')
+                plt.ylabel('Piston [$\mu$m]')
+                plt.show()
+            except ValueError:
+                plt.clf()
+                plt.plot(piston_rec,color=color1,label='Reconstructed piston')
+                plt.plot(piston_red,color='k',label='Theoretical piston')
+                plt.plot(piston_res,color=color2,label='Residual Value')
+                plt.fill_between(piston_res, 0, alpha=0.2,color=color2)
+                plt.axhline(0,lw=0.4)
+                hide_spines()
+                plt.legend(loc=2)
+                plt.xlabel('measurements')
+                plt.ylabel('Piston [$\mu$m]')
+                plt.show()
         
         if only_rms:
             return piston_rms
@@ -952,7 +968,7 @@ class Yaodata(Prex,Zernike):
 
 
         # Read in SH shape
-        name_shshape = self.path + self.prefix + '_SH_pupil.fits'
+        name_shshape = self.path + self.prefix + '_SH_pupil_1.fits'
         shshape = fits.open(name_shshape)[0].data
         shshapelist = shshape.reshape(len(shshape)*len(shshape))
         validsubaps = np.sum(shshape)
@@ -1141,6 +1157,7 @@ class Yaodata(Prex,Zernike):
         step = average/frequency
         x = np.arange(0,len(data_prex[2])*step,step)
         if plot_piston:
+            plt.figure(figsize=(5,2.5))
             plt.plot(x,piston_rec,color=color1,label='Reconstructed piston')
             plt.plot(x,piston_red,color='k',label='Theoretical piston')
             plt.plot(x,piston_res,color=color2,label='Residual Value')
