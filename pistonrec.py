@@ -146,25 +146,30 @@ class Prex(Imagepro):
             av_tilt = np.mean(tilt[i:i+2*average])
             
             if windaverage != 1:
-                tiplist.append(av_tip)
-                tiltlist.append(av_tilt)
+                if i == 0:
+                    print('Use windaverage of %i' % windaverage)
+                difpiston.append(av_tip*np.median(maxy[-windaverage:])+av_tilt*np.median(maxy[-windaverage:]))
+                
+                
             else:
                 difpiston.append(av_tip*y+av_tilt*x)
             
-        if windaverage != 1:
-            overlap = (len(maxx)%windaverage)
-            maxx = np.array(maxx[:-overlap])
-            maxx = np.median(maxx.reshape(-1,windaverage),1)
-            maxx = maxx.repeat(windaverage)
-            
-            maxy = np.array(maxy[:-overlap])
-            maxy = np.median(maxy.reshape(-1,windaverage),1)
-            maxy = maxy.repeat(windaverage)
-            
-            tiplist = np.array(tiplist[:-overlap])
-            tiltlist = np.array(tiltlist[:-overlap])
-            
-            difpiston = tiplist*maxy+tiltlist*maxx 
+#        if windaverage != 1:
+#            print('Using a wind average of %i' % (windaverage*average))
+#            print('pipi')
+#            overlap = (len(maxx)%windaverage)
+#            maxx = np.array(maxx[:-overlap])
+#            maxx = np.median(maxx.reshape(-1,windaverage),1)
+#            maxx = maxx.repeat(windaverage)
+#            
+#            maxy = np.array(maxy[:-overlap])
+#            maxy = np.median(maxy.reshape(-1,windaverage),1)
+#            maxy = maxy.repeat(windaverage)
+#            
+#            tiplist = np.array(tiplist[:-overlap])
+#            tiltlist = np.array(tiltlist[:-overlap])
+#            
+#            difpiston = tiplist*0.71+tiltlist*0.71 
             
             
         if only_pos:

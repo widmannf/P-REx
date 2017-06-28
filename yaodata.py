@@ -510,9 +510,10 @@ class Yaodata(Prex,Zernike):
         for j in range(0,len(tip)-average,average):
             dif = (np.mean(piston[j+average:j+2*average])-np.mean(piston[j:j+average]))
             difpiston_rec.append(dif)
-        if windaverage != 1:
-            overlap = (len(difpiston_rec)%windaverage)
-            difpiston_rec = difpiston_rec[:-overlap]
+# Not needed with new wind average calculation
+#        if windaverage != 1:
+#            overlap = (len(difpiston_rec)%windaverage)
+#            difpiston_rec = difpiston_rec[:-overlap]
         
         # if wanted get calibration factor for TT values
         if TTfactor:
@@ -1124,7 +1125,7 @@ class Yaodata(Prex,Zernike):
 
 
     
-    def yao2prexpiston(self,average=10,frequency=500,only_rms=False,plot_piston=False, *args, **kwargs):
+    def yao2prexpiston(self,average=10,frequency=500,only_rms=False,plot_piston=False,TTfactor=False, *args, **kwargs):
         """
         Uses the yao_to_prex_fast function (for necessary data see function) but gives the reconstructed piston
         as an output and not the differential piston
@@ -1137,7 +1138,7 @@ class Yaodata(Prex,Zernike):
         piston_rms  rms of residual piston
         """
         data_prex = self.yao2prexfast(average=average,return_piston=True,return_lists=True,
-                                      TTfactor=True, *args, **kwargs)
+                                      TTfactor=TTfactor, *args, **kwargs)
     
         piston = data_prex[4]
         pistonred = [i-piston[0] for i in piston]
