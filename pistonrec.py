@@ -150,9 +150,9 @@ class Prex(Imagepro):
                     print('Use average for wind emasurement of %i iterations steps' % (average*windaverage))
                     maxx_used = []
                     maxy_used = []
-                difpiston.append(av_tip*np.median(maxy[-windaverage:])+av_tilt*np.median(maxx[-windaverage:]))
-                maxx_used.append(np.median(maxx[-windaverage:]))
-                maxy_used.append(np.median(maxy[-windaverage:]))
+                difpiston.append(av_tip*np.mean(maxy[-windaverage:])+av_tilt*np.mean(maxx[-windaverage:]))
+                maxx_used.append(np.mean(maxx[-windaverage:]))
+                maxy_used.append(np.mean(maxy[-windaverage:]))
                 
                 
             else:
