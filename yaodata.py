@@ -40,6 +40,10 @@ from matplotlib import gridspec
 class Yaodata(Prex,Zernike):
     
     def __init__(self,path,prefix,size=0.5,crop=3,maxshift=4):
+        # 'Global' parameters: path & prefix of Yao data,
+        # size of fitted Gaussian,
+        # size of cropped image for peak detection and 
+        # maximal allowed shift in pixels
         self.path = path
         self.prefix = prefix
         self.size = size
@@ -678,6 +682,8 @@ class Yaodata(Prex,Zernike):
     
     #############################
     ## 2nd prex version, with WF reconstruction
+    ## usually not used, as it is way slower, and less
+    ## accurate
     #############################
     
     

@@ -28,6 +28,9 @@ from .imagepro import *
 class Prex(Imagepro):
     
     def __init__(self,size=0.5,crop=3,maxshift=4):
+        # 'Global' parameters: size of fitted Gaussian,
+        # size of cropped image for peak detection and 
+        # maximal allowed shift in pixels
         self.size = size
         self.crop = crop
         self.maxshift = maxshift
@@ -36,7 +39,7 @@ class Prex(Imagepro):
     def winddetection(self,image,kernel,laplace=False,return_image=False):
         """
         Get shift between to images with a normalized cross correlation and a fitted Gaussian
-        Similar functino later used in the prex system
+        Similar function later used in the prex system
         """
         nxcorr = self.nxcorrelation(image,kernel,laplace=laplace)
     
@@ -147,7 +150,7 @@ class Prex(Imagepro):
             
             if windaverage != 1:
                 if i == 0:
-                    print('Use average for wind emasurement of %i iterations steps' % (average*windaverage))
+                    print('Use average for wind measurement of %i iterations steps' % (average*windaverage))
                     maxx_used = []
                     maxy_used = []
                 difpiston.append(av_tip*np.mean(maxy[-windaverage:])+av_tilt*np.mean(maxx[-windaverage:]))
@@ -162,23 +165,6 @@ class Prex(Imagepro):
         if windaverage != 1:
             maxx = maxx_used
             maxy = maxy_used
-#        if windaverage != 1:
-#            print('Using a wind average of %i' % (windaverage*average))
-#            print('pipi')
-#            overlap = (len(maxx)%windaverage)
-#            maxx = np.array(maxx[:-overlap])
-#            maxx = np.median(maxx.reshape(-1,windaverage),1)
-#            maxx = maxx.repeat(windaverage)
-#            
-#            maxy = np.array(maxy[:-overlap])
-#            maxy = np.median(maxy.reshape(-1,windaverage),1)
-#            maxy = maxy.repeat(windaverage)
-#            
-#            tiplist = np.array(tiplist[:-overlap])
-#            tiltlist = np.array(tiltlist[:-overlap])
-#            
-#            difpiston = tiplist*0.71+tiltlist*0.71 
-            
             
         if only_pos:
             return maxx, maxy
