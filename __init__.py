@@ -17,8 +17,10 @@
 ## Produced by Felix Widmann as part of the master thesis at MPIA in Heidelberg
 ## 
 ## This module contains classes & functino for image processing directly on the output of an
-## AO System. It contains 3 Parts right now:
+## AO System. It contains 6 Parts right now:
 ## 
+## Part 0: smallfunc.py
+##  Some small functions used for plotting and general calculations
 ## Part 1: zernike.py
 ## 	Functions to reconstruct images from Zernike modes
 ## Part 2: imagepro.py
@@ -32,10 +34,9 @@
 ## 	for that will be added.
 ## Part 5: flao.py
 ##  apply prex to flao data (more to come)
-## 
-## !!! This Module is under constant developement at the moment !!!
 ###########
 
+from .smallfunc import *
 from .zernike import *
 from .imagepro import *
 from .pistonrec import *
