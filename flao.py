@@ -238,21 +238,3 @@ class FLAO(Prex):
                 return vspeed, angle
             else:
                 return maxpos[0],maxpos[1]
-
-    def length(self,v):
-        return math.sqrt(v[0]**2+v[1]**2)
-    def dot_product(self,v,w):
-        return v[0]*w[0]+v[1]*w[1]
-    def determinant(self,v,w):
-        return v[0]*w[1]-v[1]*w[0]
-    def inner_angle(self,v,w):
-        cosx=self.dot_product(v,w)/(self.length(v)*self.length(w))
-        rad=math.acos(cosx) # in radians
-        return rad*180/math.pi # returns degrees
-    def angle_clockwise(self,A, B):
-        inner=self.inner_angle(A,B)
-        det = self.determinant(A,B)
-        if det<0: #this is a property of the det. If the det < 0 then B is clockwise of A
-            return inner
-        else: # if the det > 0 then A is immediately clockwise of B
-            return 360-inner
