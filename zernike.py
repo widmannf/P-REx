@@ -116,8 +116,15 @@ class Zernike:
 
 
 
-
-    ##### Functions to reconstruct phase front from Slopes
+    #########################
+    ##### The following functions are used to
+    ##### reconstruct phase front from Slopes
+    ##### Typical command for this:
+    #####   # create reconstructor matrix:
+    #####   s2z = zernrexonstructor_givenmask(numerSlopes,numberZernModes,pupilImage)
+    #####   # Build wavefront
+    #####   WF = slopes2WF(s2z,xSlopes,ySlopes,pupilImage)
+    #########################
     
     
     def _choose(self,a,b):
@@ -309,7 +316,7 @@ class Zernike:
 
 
 
-    def _zernreconstruction(self,numSlopes,numZernike,nlensletsdiam,returnMask=True):
+    def zernrexonstructor(self,numSlopes,numZernike,nlensletsdiam,returnMask=True):
         """
         Build a matrix to reconstruct Zernike modes from a list of slopes
         Matrix will have a size of #slopes x #zernikemodes
@@ -345,7 +352,7 @@ class Zernike:
         else:
             return B
         
-    def _zernreconstruction_givenmask(self,numSlopes,numZernike,lensletmask):
+    def zernrexonstructor_givenmask(self,numSlopes,numZernike,lensletmask):
         """
         Build a matrix to reconstruct Zernike modes from a list of slopes
         Matrix will have a size of #slopes x #zernikemodes
