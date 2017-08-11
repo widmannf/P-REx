@@ -24,8 +24,8 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib
 
-from smallfunc import *
-
+from generalFunctions import *
+from .smallfunc import *
 
 ##################################################
 ## Class 5: Functions to use Prex directly on LBT-FLAO AO data

@@ -19,63 +19,6 @@ color4 = '#7A68A6'
 ##################################################
 
 
-# Matplotlib design
-# include own Matplotlib style & a function to hide the unnecessary spines in the plots
-def set_style(style):
-    home = expanduser("~")
-    style_path = home + "/Master/Mplstyle/"
-    available_styles = [i[30:-9] for i in sorted(glob.glob(style_path+"*.mplstyle"))]
-    if style in available_styles:
-        style_path = style_path+style+'.mplstyle'
-    elif style in plt.style.available:
-        style_path = style
-    else:
-        raise ValueError("Style {} not found. Available styles: {}".format(style,", ".join(available_styles)))
-    plt.rcParams.update(plt.rcParamsDefault)
-    if style == 'output':
-        plt.style.use("../Mplstyle/vdefault.mplstyle")
-        plt.style.use("../Mplstyle/vpgf.mplstyle")
-    else:
-        plt.style.use(style_path)
-
-
-
-def hide_spines(outwards=True,onlytop=False):
-    figures = [x for x in matplotlib._pylab_helpers.Gcf.get_all_fig_managers()]
-    for figure in figures:
-        if onlytop:
-            # Get all Axis instances related to the figure.
-            for ax in figure.canvas.figure.get_axes():
-                ax.spines['top'].set_visible(False)
-                ax.get_xaxis().tick_bottom()
-                if outwards:
-                    ax.spines['left'].set_position(('outward',10))
-                    ax.spines['bottom'].set_position(('outward',10))
-                    ax.spines['right'].set_position(('outward',10))
-        else:
-            # Get all Axis instances related to the figure.
-            for ax in figure.canvas.figure.get_axes():
-                ax.spines['top'].set_visible(False)
-                ax.spines['right'].set_visible(False)
-                ax.get_xaxis().tick_bottom()
-                ax.get_yaxis().tick_left()
-                if outwards:
-                    ax.spines['left'].set_position(('outward',10))
-                    ax.spines['bottom'].set_position(('outward',10))
-                
-                
-                
-
-# Print process of loops
-def print_status(number,total):
-    number = number+1
-    if number == total:
-        print ("\rComplete: 100%")
-    else:
-        percentage = int((number/total)*100)
-        print ("\rComplete: ", percentage, "%", end="")
-
-
 # error mesurement
 def rmse(prediction, target):
     """

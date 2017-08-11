@@ -19,7 +19,7 @@ import scipy.ndimage.filters
 import scipy.optimize as opt
 
 from .imagepro import *
-
+from .smallfunc import *
 
 ##################################################
 ## Class 3: P-REx functions

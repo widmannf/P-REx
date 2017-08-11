@@ -23,6 +23,7 @@ import numpy as np
 from scipy.misc import factorial as fac
 import math
 
+from .smallfunc import *
 
 ##################################################
 ## Class 1: functions for the use of Zernike modes

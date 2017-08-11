@@ -27,7 +27,8 @@ import matplotlib
 
 from .pistonrec import *
 from .zernike import *
-from smallfunc import *
+from .smallfunc import *
+from generalFunctions import *
 from matplotlib import gridspec
 
 
@@ -400,7 +401,7 @@ class Yaodata(Prex,Zernike):
 
 
 
-    def yao2prexTTfast(self,average=10,tomum=0.19392,npixel=200,return_piston=False,plot=False,
+    def yao2prexTTfast(self,average=10,tomum=0.22,npixel=200,return_piston=False,plot=False,
                     return_lists=False,return_strehl=True,TTfactor=False,windaverage=1,
                     *args, **kwargs):
         """
@@ -458,7 +459,7 @@ class Yaodata(Prex,Zernike):
         # Result of the funtion will now be in mu m
         # equavelnt to: (tel.diam/sim.pupildiam)/4.848
         # for D = 8m, 200 pix: factor = 0.19393
-        if tomum == 0.19392:
+        if tomum == 0.22:
             print('Standard Factor for D=8m & 200 pixel used. Need to be changed for a different konfiguration.')
             print('Use keyword factor')
         else:
