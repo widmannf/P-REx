@@ -13,8 +13,10 @@ A complimentary repository contains my master thesis and an example notebook for
 
 ## Usage:
 
-Pull directory to pythonpath, then:'
+Pull directory to pythonpath, then:
+
 import prex
+
 p = prex.Prex()
 
 
