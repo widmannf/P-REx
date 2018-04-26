@@ -10,12 +10,13 @@ More information on the code in the Python files.
 A complimentary repository contains my master thesis and an example notebook for the use of this module. 
 
 
+
 ## Usage:
+
 Pull directory to pythonpath, then:'
-
 import prex
-
 p = prex.Prex()
+
 
 
 ## Short Introduction:
@@ -35,3 +36,4 @@ The function then does the following:
 - average over slopes
 - cross correlation of the x- and y-slopes in order to determine the wind vector
 - calculates the differential fit from the measured wind vecor and the tip/tilt
+- returns a list of differential piston
