@@ -332,7 +332,7 @@ class Imagepro:
     
     
     
-    def maxgauss(self,nxcorr,solid=False,returnall=False,returnerror=False,crop=10,size=2,show=False):
+    def maxgauss(self,nxcorr,usefilter=False,filtersize=4,solid=False,returnall=False,returnerror=False,crop=10,size=2,height=1,show=False):
         """
         Function to determine the maximum position of a fitted 2D Gaussian.
         Determines the maximum pixel value and crops a small image around this values
@@ -342,13 +342,19 @@ class Imagepro:
         crop = in pixel, crop size around max value
         size = estimated width of gaussian, needs to be adapted, important for fit
         
+        if usefilter: smoothes image with a constant filter of the size filtersize
         if solid:   returns maxpos if fit fails, else returns error (may be necessary to 
                     use error to try different fit
         if returnall: returns all parameter of fitted gauss, else only max position
         if show: prints out the image including the 2D Gaussian (for debugging & testing)
         """
         import matplotlib.pyplot as plt
-        maxpos = np.unravel_index(nxcorr.argmax(), nxcorr.shape)
+        import scipy.ndimage.filters as filt
+        if usefilter:
+            filter_nxcorr = filt.uniform_filter(nxcorr,filtersize)
+            maxpos = np.unravel_index(filter_nxcorr.argmax(), filter_nxcorr.shape)
+        else:
+            maxpos = np.unravel_index(nxcorr.argmax(), nxcorr.shape)
         
         # Cut image to get a better result
         smallnxcorr = nxcorr[maxpos[0]-crop:maxpos[0]+crop,maxpos[1]-crop:maxpos[1]+crop]
@@ -372,11 +378,25 @@ class Imagepro:
             return maxpos[0],maxpos[1]
             
         # Renew fit boundaries (necessary here, as size of cropped image may change)
-        initial_guess = (0.7,smalldimx/2,smalldimy/2,size,size,0,0)
+        initial_guess = (height,smalldimx/2,smalldimy/2,size,size,0,0)
         x = np.linspace(0, smalldimx-1, smalldimx)
         y = np.linspace(0, smalldimy-1, smalldimy)
         x, y = np.meshgrid(x, y)
-        smallnxcorr = smallnxcorr.reshape(smalldimx*smalldimy)
+        
+        # check for nans:
+        mask = ~np.isnan(smallnxcorr)
+        numbernans = len(np.where(mask== 0)[0])
+        if numbernans == 0:
+            smallnxcorr = smallnxcorr.reshape(smalldimx*smalldimy)
+        else:
+            print('Nan values detected, these are masked for the fit')
+            x = x[mask]
+            y = y[mask]
+            smallnxcorr = smallnxcorr.reshape(smalldimx*smalldimy)
+            rmask = mask.reshape(smalldimx*smalldimy)
+            smallnxcorr = smallnxcorr[rmask]
+            
+       
         if solid:
             try:
                 popt, pcov = opt.curve_fit(self._2Dgauss, (x, y), smallnxcorr, p0=initial_guess)
@@ -390,20 +410,23 @@ class Imagepro:
         popt[1] += (maxpos[1]-crop)
         
         if show:
-            Z = np.arange(0,1,0.1)
-            dimx = nxcorr.shape[0]
-            dimy = nxcorr.shape[1]
-            x = np.linspace(0, dimx-1, dimx)
-            y = np.linspace(0, dimy-1, dimy)
-            x, y = np.meshgrid(x, y)
-            data_fitted = self._2Dgauss((x, y), *popt)
-            fig, ax = plt.subplots(1, 1)    
-            ax.hold(True)
-            ax.imshow(nxcorr)
-            ax.contour(x, y, data_fitted.reshape(dimx, dimy), colors='k',levels=Z)
-            ax.axvline(popt[1],ls='--',color='k')
-            ax.axhline(popt[2],ls='--',color='k')
-            plt.show()
+            if numbernans != 0:
+                print('Nan values in image, cannot plot')
+            else:
+                Z = np.arange(0,1,0.1)
+                dimx = nxcorr.shape[0]
+                dimy = nxcorr.shape[1]
+                x = np.linspace(0, dimx-1, dimx)
+                y = np.linspace(0, dimy-1, dimy)
+                x, y = np.meshgrid(x, y)
+                data_fitted = self._2Dgauss((x, y), *popt)
+                fig, ax = plt.subplots(1, 1)    
+                ax.hold(True)
+                ax.imshow(nxcorr)
+                ax.contour(x, y, data_fitted.reshape(dimx, dimy), colors='k',levels=Z)
+                ax.axvline(popt[1],ls='--',color='k')
+                ax.axhline(popt[2],ls='--',color='k')
+                plt.show()
 
         if returnall:
             if returnerror:
