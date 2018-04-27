@@ -10,22 +10,32 @@ More information on the code in the Python files.
 A complimentary repository contains my master thesis and an example notebook for the use of this module. 
 
 
+
 ## Usage:
+
 Pull directory to pythonpath, then:
+
 import prex
+
 p = prex.Prex()
+
+
 
 ## Short Introduction:
 
 The main function is the piston reconstruction based on the Tip-Tilt method:
 
 diffpiston = p.prexTT(datacube,average)
+
 Datacube is a list of the measured atmospheric data from the wavefront sensor in the order:
+
 x-slopes, y-slopes, tip, tilt
 
 **The slopes have to be a list/array of 2D arrays, in open loop or pseudo open loop!**
 
 The function then does the following:
+
 - average over slopes
 - cross correlation of the x- and y-slopes in order to determine the wind vector
 - calculates the differential fit from the measured wind vecor and the tip/tilt
+- returns a list of differential piston
