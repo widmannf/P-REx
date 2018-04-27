@@ -31,7 +31,7 @@ Datacube is a list of the measured atmospheric data from the wavefront sensor in
 
 x-slopes, y-slopes, tip, tilt
 
-**The slopes have to be in open loop or pseudo open loop!**
+**The slopes have to be a list/array of 2D arrays, in open loop or pseudo open loop!**
 
 The function then does the following:
 
